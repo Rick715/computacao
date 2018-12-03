@@ -1,0 +1,144 @@
+#include <SPI.h>
+#include <SD.h>
+
+// declarar pinos
+const int buttonPin = 8; // número do pino pushbutton
+const int ledPin = 3; // número do pino LED
+
+// Declarar variaveis
+int estado = 0; // variável para leitura do pushbutton
+bool guarda_estado = 0; // variável para armazenar valores do pushbutton
+unsigned long tempo, tempo1, tempo2; // variaveis para a leitura de tempo
+int valor = 0, custo = 0;
+int ligado = 0, dadosnovos = 0;
+double tempo_decorrido, tempo_minutos, tempo_segundos;
+double consumo_led, consumo_led2, consumo_fluorescente, consumo_fluorescente2, consumo_incandescente, consumo_incandescente2;
+double valor_led, valor_led2, valor_fluorescente, valor_fluorescente2, valor_incandescente, valor_incandescente2;
+
+void setup()
+{
+  Serial.begin (9600);
+  SD.begin(4);
+  // definir o Led como saída
+  pinMode(ledPin, OUTPUT);
+  // definir o botão como entrada
+  pinMode(buttonPin, INPUT);
+}
+void loop()
+{
+  // sobre o botão:  ligado (HIGH) ou desligado (LOW)
+  estado = digitalRead(buttonPin);
+
+
+  // verifica se o botão está pressionado
+
+
+  if (estado == 0 && ligado == 0)
+  {
+
+    digitalWrite(ledPin, HIGH);
+    tempo1 = millis() ;
+    ligado = 1;
+
+    delay(1000);
+  }
+  else if (estado == 0 && ligado == 1)
+  {
+    digitalWrite(ledPin, (LOW));
+    tempo2 = millis() ;
+    tempo_decorrido = tempo2 - tempo1;                        // Diferenca dos dois tempos
+    tempo_segundos = tempo_decorrido / 1000;                  // conversao de milisegundos para segundos
+    tempo_minutos = tempo_segundos / 60;                      // conversao de segundos para minutos
+    consumo_led = tempo_minutos * 7;                          // consumo do led
+    consumo_led2 = consumo_led / 60;                          // consumo do led e conversao para horas ( para informar o padrão kW/h )
+    consumo_incandescente = tempo_minutos * 60;               // consumo incandescente
+    consumo_incandescente2 = consumo_incandescente / 60;      // consumo incandescente e conversao para horas ( para informar o padrão kW/h )
+    consumo_fluorescente = tempo_minutos * 15;                // consumo fluorescente
+    consumo_fluorescente2 = consumo_fluorescente / 60;        // consumo fluorescente e conversao para horas ( para informar o padrão kW/h )
+
+    // Inicio do calculo de consumo de energia residencial (em kW/H)
+
+    valor_led = consumo_led2 * 0, 16188;                      // consumo da led sem o valor do imposto
+    valor_led2 = consumo_led2 * 0, 17039;                     // consumo da led com o valor do imposto
+    valor_incandescente = consumo_incandescente2 * 0, 16188;  // consumo da incandescente sem o valor do imposto
+    valor_incandescente2 = consumo_incandescente2 * 0, 17039; // consumo da incandescente com o valor do imposto
+    valor_fluorescente = consumo_fluorescente2 * 0, 16188;    // consumo da fluorescente sem o valor do imposto
+    valor_fluorescente2 = consumo_fluorescente2 * 0, 17039;   // consumo da fluorescente com o valor do imposto
+   
+    // Fim do calculo de consumo de energia residencial (em kW/H)
+    // consumo dado em kW/h
+    //printado no monitor serial
+
+    Serial.println("Tempo em Minutos:");
+    Serial.println(tempo_minutos);
+    Serial.println("Consumo da lampada de led (W/h):");
+    Serial.println(consumo_led2);
+    Serial.println("Valor gasto sem imposto:");
+    Serial.println(valor_led);
+    Serial.println("Valor gasto com imposto:");
+    Serial.println(valor_led2);
+    Serial.println("Consumo da lampada fluorescente (W/h):");
+    Serial.println(consumo_fluorescente2);
+    Serial.println("Valor gasto sem imposto:");
+    Serial.println(valor_fluorescente);
+    Serial.println("Valor gasto com imposto:");
+    Serial.println(valor_fluorescente2);
+    Serial.println("Consumo da lampada incandescente (W/h):");   
+    Serial.println(consumo_incandescente2);
+    Serial.println("Valor gasto sem imposto:");
+    Serial.println(valor_incandescente);
+    Serial.println("Valor gasto com imposto:");
+    Serial.println(valor_incandescente2);
+
+    
+
+    // iniciando a parte do cartao SD
+    // Para abrir o SD
+    File dados = SD.open("dados.txt", FILE_WRITE);
+    if (dados) {
+      dadosnovos = 1;
+      if (dadosnovos == 1){
+      // Anexando os arquivos no SD
+      dados.println("Tempo em Minutos:");
+      dados.println(tempo_minutos);
+      dados.println("\nConsumo da lampada de led (W/h):");
+      dados.println(consumo_led2);
+      dados.println("Valor gasto sem imposto:");
+      dados.println(valor_led);
+      dados.println("Valor gasto com imposto:");
+      dados.println(valor_led2);
+      dados.println("\nConsumo da lampada fluorescente (W/h):");
+      dados.println(consumo_fluorescente2);
+      dados.println("Valor gasto sem imposto:");
+      dados.println(valor_fluorescente);
+      dados.println("Valor gasto com imposto:");
+      dados.println(valor_fluorescente2);
+      dados.println("\nConsumo da lampada incandescente (W/h):");
+      dados.println(consumo_incandescente2);
+      dados.println("Valor gasto sem imposto:");
+      dados.println(valor_incandescente);
+      dados.println("Valor gasto com imposto:");
+      dados.println(valor_incandescente2);
+      dados.println("\n\n\n\n\n\n\n\n\n\n\n");
+      dados.close();
+      Serial.println("\n\n\nInformação Arquivada no SD Card\n\n\n");
+      dadosnovos = 0;
+       
+      }
+      
+    } else {
+      Serial.println("\n\n\nErro ao arquivar a informação\n\n\n");
+
+    }
+
+    // fim da gravacao de dados no SD
+
+    ligado = 0;
+    delay(1000);
+    
+
+
+  }
+
+
+}
